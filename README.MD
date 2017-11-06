@@ -50,7 +50,7 @@
 
 <img src="readme-images/dl_files_1.PNG" alt="dl_files_1" width="300px"><br><br>
 
-* Unityでプロジェクトとして開きます
+* `Unity` フォルダをUnityでプロジェクトとして開きます
 
 <img src="readme-images/unity_1.PNG" alt="unity_1" width="220px"><br><br>
 
@@ -63,6 +63,7 @@
     * `Main`: ゲーム本編です
     * `Ending`: ゲームが終了したタイミングで再生される動画のシーンです
   * `Scripts`: 当プロジェクトで利用したスクリプトファイルを保存しています
+* 当プロジェクトには `Movie` と `Music` のファイルは含まれていませんので、必要に応じて追加してください
 
 * `Main` シーンの `GameManager` オブジェクトの `NCMB Settings` コンポーネントに mBaaS でアプリを作成した際に生成された APIキー を設定します
 
@@ -72,7 +73,7 @@
 
 <img src="readme-images/check_mb_api_key.PNG" alt="check_mb_api_key" width="750px"><br><br>
 
-* 次に、`GameManager.cs`を編集します
+* 次に、`GameManager.cs`の18行目のAPIのURLの `**********` の箇所を編集します
 
 * `YOUR_NCMB_APPLICATION_ID` の部分を mBaaSのアプリIDに書き換えます
 * アプリIDは mBaaS ダッシュボードのURLに記載しています
