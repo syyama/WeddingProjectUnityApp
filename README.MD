@@ -6,7 +6,7 @@
 * 同僚の披露宴の余興で実施した『全員参加！メッセージ送信ゲーム』ゲーム本体のUnityアプリです
 * ゲームを動作させるためには本Unityアプリの準備の他、「クライアント側【Webアプリ】」の環境構築が必要です
 * 「クライアント側【Webアプリ】」については以下を参照してください
-  * _ページ準備中_
+  * https://github.com/natsumo/WeddingProjectWebApp
 
 ## 『全員参加！メッセージ送信ゲーム』とは？
 
@@ -123,18 +123,118 @@ https://console.mb.cloud.nifty.com/#/applications/**********/
 
 ## 解説
 
-### メッセージの取得
+* ゲーム本編の動作は `GameManager.cs` ですべて制御しています
+* mBaaSのデータストア上に保存されたデータをUnityから呼び出して使用しています
 
-### 自撮り画像の取得
+### ポーリング処理の実装
+* `Update()` 関数内でデータストアから取得する処理を定期的に実行することでポーリング処理を実装しています
+* ここでは0.3秒に1回データストアにアクセスしています
 
-### その他Tips
+```csharp
+  private float timeleft;
+
+	// Update is called once per frame
+	void Update () {
+
+        // 0.3秒ごとに処理を行う
+        timeleft -= Time.deltaTime;
+        if (timeleft <= 0.0)
+        {
+            timeleft = 0.3f;
+
+            // DataStoreからデータを取得する
+            FetchDatastore();
+        }
+  }
+```
+
+### メッセージとファイルストアのURLを取得
+
+* データストアに保存しているデータを取得します
+* `query.AddAscendingOrder("createDate");` でデータストアの作成日時の降順で取得するよう設定します
+* `query.Limit = 1000;` でクエリを取得する件数を1000件とします（デフォルトは100件）
+* `query.FindAsync` 関数を使ってデータストアからデータを取得します
+* データの取得に成功すると `if (dataCount == 0 || dataCount != objList.Count)` でデータに追加があるかどうかを判別し、データがない場合は処理を行いません
+* さらに、追加のレコードがあった場合にそれぞれ `_name`, `_message`, `_photonName` の変数にセットし、レコード毎にパネルをめくる処理を行っています
+
+
+```csharp
+    // パネルのめくれた枚数
+    private int dataCount = 0;
+
+    /// <summary>
+    /// データストアからメッセージを取得する
+    /// </summary>
+    private void FetchDatastore()
+    {
+        //Scoreフィールドの降順でデータを取得
+        query.AddAscendingOrder("createDate");
+        query.Limit = 1000;
+
+        //データストアでの検索を行う
+        query.FindAsync((List<NCMBObject> objList, NCMBException e) => {
+            if (e != null)
+            {
+                //検索失敗時の処理
+            }
+            else
+            {
+                if (dataCount == 0 || dataCount != objList.Count)
+                {
+                    for(int i = dataCount; i < objList.Count; i++)
+                    {
+                        // mBaaSから取得
+                        string _name = objList[i]["name"] as string;
+                        string _message = objList[i]["message"] as string;
+                        string _photoName = objList[i]["photoName"] as string;
+
+                        // パネルをめくる
+                        StartCoroutine(CurlPannel(_name, _message, _photoName));
+                    }
+
+                    // データカウント
+                    dataCount = objList.Count;
+                }
+            }
+        });
+    }
+```
+
+### データストアから画像を取得する処理
+* パネルをめくる処理に関しては、Unity固有の実装ですので説明を割愛します、コードを参照ください
+* ファイルストアの基礎となるAPIのURLは先述の通りですが、事前に `アプリID` を設定しておきます
+* ファイルストアの自撮り画像はUnity標準の `WWW` クラスを利用することで取得できます
+* `www.textureNonReadable` で Texture2Dとし、テクスチャとしてセットします
+
+``` csharp
+
+    private const string BASE_URL = "https://mb.api.cloud.nifty.com/2013-09-01/applications/****************/publicFiles/";
+
+    /// <summary>
+    /// パネルをめくる処理
+    /// </summary>
+    public IEnumerator CurlPannel(string name, string message, string photoName)
+    {
+
+        // wwwクラスのコンストラクタに画像URLを指定
+        string url = BASE_URL + photoName;
+        WWW www = new WWW(url);
+
+        // 画像ダウンロード完了を待機
+        yield return www;
+
+        // パネルにプロフィール画像をセット
+        panel.SetPanelImage(www.textureNonReadable, canvas);
+
+    }
+```
 
 ### Webアプリとの連携イメージ
 * Webアプリを通して各自所有しているスマートフォンから「名前」と「自撮り画像」を mBaaS に登録します
 * お祝いメッセージは同時アクセスが可能なようにスクリプトを通してデータストアに保存します
 * Unity側でデータストアの情報をポーリングでデータ件数を取得し、追加があればゲームを進める仕組みです
 * 詳細は ゲーム本体【Webアプリ】の解説ページ を参照ください
-  *  _ページ準備中_
+  *  https://github.com/natsumo/WeddingProjectWebApp
 
 ## 参考
 * 取り急ぎ作ったゲームなので、一部ソースが酷い箇所があります。何卒ご容赦ください。
